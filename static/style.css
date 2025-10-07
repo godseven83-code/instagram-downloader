@@ -1,0 +1,319 @@
+:root {
+    --bg1: #0f0c29;
+    --bg2: #302b63;
+    --accent: #ff3366;
+    --muted: #bfc3d6;
+}
+
+* {
+    box-sizing: border-box
+}
+
+body {
+    margin: 0;
+    font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* fluid padding for different devices */
+    padding: clamp(12px, 3vw, 48px);
+    /* fluid base font for better readability on small/large screens */
+    font-size: clamp(14px, 1.2vw + 12px, 18px);
+}
+
+.page {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 12px;
+}
+
+.card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: clamp(14px, 2.5vw, 28px);
+    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.card-header {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    /* allow stacking on small widths */
+}
+
+.logo img {
+    /* Controlled by CSS variable --logo-size which JS updates on resize. Falls back to a clamp if not set. */
+    /* Increase the minimum so logos remain legible on small phones */
+    width: var(--logo-size, clamp(56px, 6vw, 100px));
+    height: auto;
+    max-width: 140px;
+    max-height: 140px;
+    /* Controlled by CSS variable --logo-size which JS updates on resize. Falls back to a clamp if not set. */
+    width: var(--logo-size, clamp(36px, 6vw, 100px));
+    height: auto;
+    max-width: 120px;
+    max-height: 120px;
+    object-fit: contain;
+    border-radius: 6px;
+    margin-right: 10px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.logo .logo-fallback {
+    vertical-align: middle
+}
+
+.logo img[style*="display:none"]+.logo-fallback {
+    display: inline-block
+}
+
+.logo img:not([style*="display:none"])+.logo-fallback {
+    display: none
+}
+
+h1 {
+    margin: 0;
+    font-size: clamp(18px, 2.2vw, 26px);
+    font-weight: 700;
+}
+
+.subtitle {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: clamp(12px, 1.1vw, 14px);
+}
+
+.download-form {
+    margin-top: 12px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+input[type="url"],
+input[type="text"],
+select {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+}
+
+select {
+    /* let select size to content on wider screens but stay usable on small screens */
+    flex: 0 0 auto;
+    min-width: 120px;
+}
+
+
+/* Make native dropdown option text readable across platforms.
+   Some browsers/OS render the dropdown pane with a light background;
+   ensure option text contrasts with that background. */
+
+select option {
+    color: #111;
+    /* dark text for dropdown menu items */
+}
+
+
+/* Provide a hover/focus style for options when supported by the UA. */
+
+select option:hover,
+select option:focus {
+    color: #fff;
+    background: var(--accent);
+}
+
+input::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+input:focus {
+    box-shadow: 0 0 0 4px rgba(255, 51, 102, 0.07);
+    border-color: var(--accent)
+}
+
+button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    min-height: 44px;
+    /* touch target */
+}
+
+button[disabled] {
+    opacity: 0.7;
+    cursor: not-allowed
+}
+
+.spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg)
+    }
+}
+
+button.loading .spinner {
+    display: inline-block
+}
+
+.msg {
+    margin-top: 14px;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #ffd54d
+}
+
+.card-footer {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 13px
+}
+
+.visually-hidden {
+    position: absolute!important;
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+    clip: rect(1px, 1px, 1px, 1px);
+    white-space: nowrap
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    overflow: hidden
+}
+
+.progress-bar[data-small="true"] {
+    height: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #ff7aa0);
+    width: 0%;
+    transition: width 0.25s ease
+}
+
+.download-link {
+    display: inline-block;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    border-radius: 8px;
+    text-decoration: none
+}
+
+
+/* Accessibility: show focus outlines for keyboard users */
+
+button:focus,
+input:focus,
+select:focus,
+a:focus {
+    outline: 3px solid rgba(255, 51, 102, 0.12);
+    outline-offset: 2px;
+}
+
+@media (max-width:600px) {
+    .card {
+        padding: 16px
+    }
+    .input-group {
+        flex-direction: column
+    }
+    button {
+        width: 100%
+    }
+    /* Header: stack and center logo/title on small screens */
+    .card-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    /* Hide the empty left logo placeholder so the visible logo centers properly */
+    .card-header>.logo:first-child {
+        display: none;
+    }
+    /* When stacked, remove the right margin so the image is centered */
+    .card-header>.logo:last-child img {
+        margin-right: 0;
+        margin-bottom: 8px;
+    }
+}
+
+
+/* Additional responsive tweaks */
+
+@media (max-width: 900px) {
+    .page {
+        max-width: 720px;
+    }
+    .logo img {
+        width: clamp(56px, 8vw, 100px);
+        height: auto;
+    }
+    select {
+        min-width: 110px;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: clamp(16px, 5vw, 20px);
+    }
+    .subtitle {
+        font-size: 12px;
+    }
+    .card {
+        padding: 12px;
+    }
+    .logo img {
+        width: 56px;
+        height: 56px;
+    }
+    select {
+        width: 100%;
+    }
+    .input-group {
+        gap: 8px;
+    }
+}
