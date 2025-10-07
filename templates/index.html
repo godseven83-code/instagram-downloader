@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Instagram Reels Downloader</title>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#E4405F">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Lightweight head scripts intentionally omitted; main behavior is handled at bottom of the page -->
+</head>
+
+<body>
+    <main class="page">
+        <div class="card">
+            <header class="card-header">
+                <div class="logo"></div>
+                <div>
+                    <h1>Instagram Reels Downloader</h1>
+                    <p class="subtitle">Paste a reel URL and get a downloadable MP4 — no login required.</p>
+                </div>
+                <div class="logo">
+                    <img id="siteLogo" src="{{ url_for('static', filename='logo.png') }}" alt="Logo" onerror="this.style.display='none'">
+                    <span class="logo-fallback">�</span>
+                </div>
+            </header>
+
+            <form id="downloadForm" class="download-form" onsubmit="return startJob(event)">
+                <label for="url" class="visually-hidden">Instagram Reel URL</label>
+                <div class="input-group">
+                    <input id="url" name="url" type="url" placeholder="https://www.instagram.com/reel/..." required>
+                    <select id="format" name="format">
+                        <option value="mp4">MP4 (video)</option>
+                        <option value="audio">Audio (MP3)</option>
+                    </select>
+                    <button id="startBtn" type="submit">
+                        <span id="spinner" class="spinner" aria-hidden="true"></span>
+                        <span class="btn-text">Start</span>
+                    </button>
+                </div>
+            </form>
+
+            <div id="progressArea" style="display:none; margin-top:12px">
+                <div class="progress-bar" aria-hidden="true">
+                    <div id="progressFill" class="progress-fill" style="width:0%"></div>
+                </div>
+                <div id="progressText" style="margin-top:8px;color:var(--muted)"></div>
+                <div id="downloadLink" style="margin-top:8px"></div>
+            </div>
+
+            <div id="messageArea">
+                {% if message %}
+                <div class="msg" role="status">{{ message }}</div>
+                {% endif %}
+            </div>
+
+            <footer class="card-footer">Made by <strong>@Techiecyber404</strong></footer>
+        </div>
+    </main>
+</body>
+
+</html>
+
+
+<script>
+    async function startJob(e) {
+        e.preventDefault();
+        const url = document.getElementById('url').value.trim();
+        const format = document.getElementById('format').value;
+        if (!url) return;
+
+        const startBtn = document.getElementById('startBtn');
+        const spinner = document.getElementById('spinner');
+        startBtn.disabled = true;
+        startBtn.classList.add('loading');
+        spinner.style.display = 'inline-block';
+
+        const resp = await fetch('/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                url,
+                format
+            })
+        });
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({
+                error: 'Unknown error'
+            }));
+            document.getElementById('messageArea').innerHTML = `<div class="msg">${err.error||'Error'}</div>`;
+            startBtn.disabled = false;
+            startBtn.classList.remove('loading');
+            spinner.style.display = 'none';
+            return;
+        }
+        const data = await resp.json();
+        const jobId = data.job_id;
+        // Do not open a new tab/window here. We'll navigate the current page when the job is ready.
+
+        document.getElementById('progressArea').style.display = 'block';
+        monitorJob(jobId);
+        return false;
+    }
+
+    function monitorJob(jobId) {
+        const evt = new EventSource(`/events/${jobId}`);
+        const fill = document.getElementById('progressFill');
+        const text = document.getElementById('progressText');
+        const linkWrap = document.getElementById('downloadLink');
+
+        evt.onmessage = (ev) => {
+            const d = JSON.parse(ev.data);
+            if (d.progress && d.progress.status === 'downloading') {
+                const pct = d.progress.percent ? Math.round(d.progress.percent) : 0;
+                fill.style.width = (pct || 0) + '%';
+                text.textContent = `Downloading: ${pct||0}% - ETA: ${d.progress.eta||'-'}`;
+            } else if (d.status === 'ready') {
+                fill.style.width = '100%';
+                text.textContent = 'Ready — preparing download...';
+                const a = document.createElement('a');
+                a.href = `/download/${jobId}`;
+                a.textContent = `Download ${d.filename || ''}`;
+                a.className = 'download-link';
+                linkWrap.innerHTML = '';
+                linkWrap.appendChild(a);
+                // Navigate current page to the download URL. This will either start the download
+                // (Content-Disposition: attachment) or load the file; if that is blocked, the visible link
+                // remains for manual click.
+                try {
+                    window.location = a.href;
+                    text.textContent = 'Download should start automatically. If not, click the button below.';
+                } catch (err) {
+                    try {
+                        a.click();
+                    } catch (e) { /* final fallback: user can click the link */ }
+                }
+                evt.close();
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('startBtn').classList.remove('loading');
+                document.getElementById('spinner').style.display = 'none';
+            } else if (d.status === 'error') {
+                text.textContent = 'Error: ' + (d.error || 'Unknown');
+                linkWrap.innerHTML = '';
+                evt.close();
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('startBtn').classList.remove('loading');
+                document.getElementById('spinner').style.display = 'none';
+            }
+        }
+        evt.onerror = () => {
+            text.textContent = 'Connection lost';
+            evt.close();
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('startBtn').classList.remove('loading');
+            document.getElementById('spinner').style.display = 'none';
+        }
+    }
+</script>
+
+<script>
+    // Auto-adjust logo size based on window width. Debounced resize for performance.
+    (() => {
+        const root = document.documentElement;
+        const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+        const setLogoSize = () => {
+            const w = window.innerWidth || document.documentElement.clientWidth;
+            // Map window width to a reasonable logo size between 56 and 140 pixels.
+            // Formula: linear from 56px at 320px -> 140px at 1400px
+            const size = Math.round(clamp(((w - 320) / (1400 - 320)) * (140 - 56) + 56, 56, 140));
+            root.style.setProperty('--logo-size', size + 'px');
+        };
+        let t;
+        window.addEventListener('resize', () => {
+            clearTimeout(t);
+            t = setTimeout(setLogoSize, 120);
+        });
+        // init
+        setLogoSize();
+    })();
+
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/static/service-worker.js')
+                .then(registration => console.log('SW registered'))
+                .catch(error => console.log('SW registration failed'));
+        });
+    }
+</script>
